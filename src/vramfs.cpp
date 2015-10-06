@@ -510,8 +510,11 @@ static size_t parse_size(const string &param) {
   std::smatch groups;
   std::regex_search(param, groups, size_regex);
 
+  /*
+   * I commented this to avoid compilation error
+   */
   size_t size = 1;
-  // std::strtoul(groups[1], NULL, 0);
+  // size_t size = std::stoul(groups[1]);
 
   if (groups[2] == "K")
     size *= 1024UL;
