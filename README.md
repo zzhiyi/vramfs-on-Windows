@@ -15,6 +15,7 @@ I just got it pass compilation.So this project doesn't work yet.In fact, besides
 
 **Dependency:**
 
+	dokan library
 	msys2 64bit
 	g++
 	an graphic card that support OpenCL
@@ -26,23 +27,23 @@ I just got it pass compilation.So this project doesn't work yet.In fact, besides
 	$make (or make OPENCL_1_1=1)
 	$./mount.sh
    
-I use Windows 10 64-bit and my laptop uses Nvidia 840M with 2GiB memory. 
+	I use Windows 10 64-bit and my laptop uses Nvidia 840M with 2GiB memory. 
 	So, the libs are for 64-bit system and I'm not going to work on 32bit system
 	 and other graphic card besides Nvidia soon. I need to get it to work first, right?  
-In lib/x64,there is OpenCL64.dll extracted from Nvidia driver, you may want to use
+	In lib/x64,there is OpenCL64.dll extracted from Nvidia driver, you may want to use
 	yours to replace it. There is also dokanfuse.dll compiled from dokan library 0.8.0-RC1.
 
 
 **Issues:**  
 
 1. **It doesn't work and causes BSOD!!!**  
-Well, I'm working to it.  
+	Well, I'm working to it.  
 
-2. **parse_size() in vramfs.cpp always return 1**  
-I changed it to return 1 to avoid error in the compiler.  
+2. **parse_size() in vramfs.cpp always return 256MiB**  
+	I changed it to return 1 to avoid error in the compiler.  
 The g++ 4.9 on msys2 doesn't have std::stoul(), I need to find
 another way. But it should be pretty easy, since it's just parsing unsigned long.
-	`
+	
 
 **License**
 

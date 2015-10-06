@@ -512,22 +512,23 @@ static size_t parse_size(const string &param) {
 
   /*
    * I commented this to avoid compilation error
+   * set size to 256MiB
    */
-  size_t size = 1;
+  size_t size = 256 * 1024UL * 1024UL;
   // size_t size = std::stoul(groups[1]);
 
-  if (groups[2] == "K")
-    size *= 1024UL;
-  else if (groups[2] == "KB")
-    size *= 1000UL;
-  else if (groups[2] == "M")
-    size *= 1024UL * 1024UL;
-  else if (groups[2] == "MB")
-    size *= 1000UL * 1000UL;
-  else if (groups[2] == "G")
-    size *= 1024UL * 1024UL * 1024UL;
-  else if (groups[2] == "GB")
-    size *= 1000UL * 1000UL * 1000UL;
+  // if (groups[2] == "K")
+  //   size *= 1024UL;
+  // else if (groups[2] == "KB")
+  //   size *= 1000UL;
+  // else if (groups[2] == "M")
+  //   size *= 1024UL * 1024UL;
+  // else if (groups[2] == "MB")
+  //   size *= 1000UL * 1000UL;
+  // else if (groups[2] == "G")
+  //   size *= 1024UL * 1024UL * 1024UL;
+  // else if (groups[2] == "GB")
+  //   size *= 1000UL * 1000UL * 1000UL;
 
   return size;
 }
