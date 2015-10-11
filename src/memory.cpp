@@ -40,7 +40,7 @@ static bool init_opencl() {
     std::vector<cl::Device> gpu_devices;
     // Use CPU instead for developing
     // change to CL_DEVICE_TYPE_GPU later
-    platform.getDevices(CL_DEVICE_TYPE_GPU, &gpu_devices);
+    platform.getDevices(CL_DEVICE_TYPE_CPU, &gpu_devices);
     if (gpu_devices.size() == 0)
       continue;
 

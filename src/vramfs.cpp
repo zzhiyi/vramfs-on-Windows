@@ -511,10 +511,9 @@ static size_t parse_size(const string &param) {
   std::regex_search(param, groups, size_regex);
 
   /*
-   * I commented this to avoid compilation error
-   * set size to 256MiB
+   * use strtoul instead of std::stoul in c++ because msys2 g++
+   * doesn't have std::stoul
    */
-  // size_t size = 256 * 1024UL * 1024UL;
   size_t size = strtoul(groups[1].str().c_str(), NULL, 0);
 
   if (groups[2] == "K")
@@ -576,7 +575,7 @@ int main(int argc, char *argv[]) {
   fuse_opt_add_arg(&args, "-obig_writes");
 
   // Properly unmount even on crash
-  fuse_opt_add_arg(&args, "-oauto_unmount");
+  // fuse_opt_add_arg(&args, "-oauto_unmount");
 
   // Let FUSE and the kernel deal with permissions handling
   fuse_opt_add_arg(&args, "-odefault_permissions");
