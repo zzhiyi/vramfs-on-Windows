@@ -3,9 +3,9 @@ CFLAGS = -Wall -Werror -std=c++11 -I include/ -I"C:\Program Files\Dokan\DokanLib
 LDFLAGS = -Llib/x64/Nvidia/ -Llib/x64 -lOpenCL64 -ldokanfuse
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -g -DDEBUG -Wall -Werror
+	CFLAGS += -g -DDEBUG
 else
-	CFLAGS += -march=native -O2
+	CFLAGS += -g -march=native -O2
 endif
 
 ifeq ($(OPENCL_1_1), 1)
