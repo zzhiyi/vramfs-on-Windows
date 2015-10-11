@@ -1,2 +1,2 @@
 #!/bin/bash
-bin/vramfs.exe Z: 100MB
+bin/vramfs.exe D:/vramfs 512MB

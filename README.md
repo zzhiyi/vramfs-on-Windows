@@ -39,11 +39,6 @@ I just got it pass compilation.So this project doesn't work yet.In fact, besides
 1. **It doesn't work and causes BSOD!!!**  
 	Well, I'm working to it.  
 
-2. **parse_size() in vramfs.cpp always return 256MiB**  
-	I changed it to return 1 to avoid error in the compiler.  
-The g++ 4.9 on msys2 doesn't have std::stoul(), I need to find
-another way. But it should be pretty easy, since it's just parsing unsigned long.
-	
 
 **License**
 
