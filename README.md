@@ -11,14 +11,16 @@ dokany: Hiroki Asakawa as original author
 	 		 and now dokany team 
 
 **WARNING:**  
-I just got it pass compilation.So this project doesn't work yet.In fact, besides not working, it will cause your system BSOD as well. 
+Now the program is barely working. But the partition shows at explorer and
+has information like free space. Partition size parsing is now working with
+msys toolchain. Other function like creating file is not working yet.
 
 **Dependency:**
 
 	dokan library
 	msys2 64bit
 	g++
-	an graphic card that support OpenCL
+	an graphic card or CPU that support OpenCL
 
 **Usage:**
 
@@ -31,13 +33,18 @@ I just got it pass compilation.So this project doesn't work yet.In fact, besides
 	So, the libs are for 64-bit system and I'm not going to work on 32bit system
 	 and other graphic card besides Nvidia soon. I need to get it to work first, right?  
 	In lib/x64,there is OpenCL64.dll extracted from Nvidia driver, you may want to use
-	yours to replace it. There is also dokanfuse.dll compiled from dokan library 0.8.0-RC1.
+	yours to replace it. There is also dokanfuse.dll compiled from my dokany fork.
 
+	For debugging purpuse, this program now uses CPU as the backend device. This means
+	you can run it regardles of your graphic card vendor so long as you have OpenCL support.
+	You may want to install OpenCL runtime support for your CPU from CPU vendors.
+	You can change it to use your GPU easily by changing the CL_DEVICE_TYPE_CPU to 
+	CL_DEVICE_TYPE_GPU. Later I might add command line options to change it at runtime.
 
 **Issues:**  
 
 1. **It doesn't work and causes BSOD!!!**  
-	Well, I'm working to it.  
+	Well, I'm working to it. This project is just got started. Please be patient.
 
 
 **License**

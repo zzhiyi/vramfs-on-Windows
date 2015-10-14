@@ -65,9 +65,21 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
 static int vram_getattr(const char *path, struct stat *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
 
+  // debug
+  std::cout << "vram_getattr sizeof(struct stat):" << sizeof(struct stat)
+            << std::endl;
+  std::cout << "vram_getattr sizeof(stbuf->st_mode):" << sizeof(stbuf->st_mode)
+            << std::endl;
+  std::cout << "vram_getattr S_IFDIR:" << S_IFDIR << std::endl;
+  std::cout << "vram_getattr S_IFREG:" << S_IFREG << std::endl;
+  std::cout << "vram_getattr S_IFLNK:" << S_IFLNK << std::endl;
+  // debug
+  std::cout << "vram_getattr path: " << path << std::endl;
   // Look up entry
   entry::entry_ref entry;
   int err = root_entry->find(path, entry);
+  // debug
+  std::cout << "vram_getattr err in find: " << err << std::endl;
   if (err != 0)
     return err;
 
@@ -76,6 +88,8 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
   if (entry->type() == entry::type::dir) {
     stbuf->st_mode = S_IFDIR | entry->mode();
     stbuf->st_nlink = 2;
+    // debug
+    std::cout << "vram_getattr" << entry->name() << " is dir" << std::endl;
   } else if (entry->type() == entry::type::file) {
     stbuf->st_mode = S_IFREG | entry->mode();
     stbuf->st_nlink = 1;
@@ -84,9 +98,13 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
     if (entry->size() > 0) {
       stbuf->st_blocks = 1 + (entry->size() - 1) / memory::block::size;
     }
+    // debug
+    std::cout << "vram_getattr" << entry->name() << " is file" << std::endl;
   } else {
     stbuf->st_mode = S_IFLNK | 0777;
     stbuf->st_nlink = 1;
+    // debug
+    std::cout << "vram_getattr" << entry->name() << " is link" << std::endl;
   }
 
   stbuf->st_uid = entry->user();
@@ -575,7 +593,7 @@ int main(int argc, char *argv[]) {
   fuse_opt_add_arg(&args, "-obig_writes");
 
   // Properly unmount even on crash
-  // fuse_opt_add_arg(&args, "-oauto_unmount");
+  fuse_opt_add_arg(&args, "-oauto_unmount");
 
   // Let FUSE and the kernel deal with permissions handling
   fuse_opt_add_arg(&args, "-odefault_permissions");
