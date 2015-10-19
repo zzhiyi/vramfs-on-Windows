@@ -33,6 +33,7 @@ static entry::dir_ref root_entry;
  */
 
 static void *vram_init(fuse_conn_info *conn) {
+  std::cout << __FUNCTION__ << std::endl;
   root_entry = entry::dir_t::make(nullptr, "");
   root_entry->user(geteuid());
   root_entry->group(getegid());
@@ -47,6 +48,8 @@ static void *vram_init(fuse_conn_info *conn) {
  */
 
 static int vram_statfs(const char *, struct statvfs *vfs) {
+  std::cout << __FUNCTION__ << std::endl;
+  std::cout << "sizeof(struct statvfs):" << sizeof(struct statvfs) << std::endl;
   vfs->f_bsize = memory::block::size;
   vfs->f_blocks = memory::pool_size();
   vfs->f_bfree = memory::pool_available();
@@ -64,22 +67,11 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
 
 static int vram_getattr(const char *path, struct stat *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
-  // debug
-  std::cout << "vram_getattr sizeof(struct stat):" << sizeof(struct stat)
-            << std::endl;
-  std::cout << "vram_getattr sizeof(stbuf->st_mode):" << sizeof(stbuf->st_mode)
-            << std::endl;
-  std::cout << "vram_getattr S_IFDIR:" << S_IFDIR << std::endl;
-  std::cout << "vram_getattr S_IFREG:" << S_IFREG << std::endl;
-  std::cout << "vram_getattr S_IFLNK:" << S_IFLNK << std::endl;
-  // debug
-  std::cout << "vram_getattr path: " << path << std::endl;
   // Look up entry
   entry::entry_ref entry;
   int err = root_entry->find(path, entry);
-  // debug
-  std::cout << "vram_getattr err in find: " << err << std::endl;
   if (err != 0)
     return err;
 
@@ -88,8 +80,6 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
   if (entry->type() == entry::type::dir) {
     stbuf->st_mode = S_IFDIR | entry->mode();
     stbuf->st_nlink = 2;
-    // debug
-    std::cout << "vram_getattr" << entry->name() << " is dir" << std::endl;
   } else if (entry->type() == entry::type::file) {
     stbuf->st_mode = S_IFREG | entry->mode();
     stbuf->st_nlink = 1;
@@ -98,13 +88,9 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
     if (entry->size() > 0) {
       stbuf->st_blocks = 1 + (entry->size() - 1) / memory::block::size;
     }
-    // debug
-    std::cout << "vram_getattr" << entry->name() << " is file" << std::endl;
   } else {
     stbuf->st_mode = S_IFLNK | 0777;
     stbuf->st_nlink = 1;
-    // debug
-    std::cout << "vram_getattr" << entry->name() << " is link" << std::endl;
   }
 
   stbuf->st_uid = entry->user();
@@ -123,6 +109,7 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
 
 static int vram_readlink(const char *path, char *buf, size_t size) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::symlink);
@@ -141,6 +128,7 @@ static int vram_readlink(const char *path, char *buf, size_t size) {
 
 static int vram_chmod(const char *path, mode_t mode) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -158,6 +146,7 @@ static int vram_chmod(const char *path, mode_t mode) {
 
 static int vram_chown(const char *path, uid_t user, gid_t group) {
   lock_guard<mutex> lock_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -176,6 +165,7 @@ static int vram_chown(const char *path, uid_t user, gid_t group) {
 
 static int vram_utimens(const char *path, const timespec tv[2]) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -195,6 +185,7 @@ static int vram_utimens(const char *path, const timespec tv[2]) {
 static int vram_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                         off_t, fuse_file_info *) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Look up directory
   entry::entry_ref entry;
@@ -220,6 +211,7 @@ static int vram_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int vram_create(const char *path, mode_t, struct fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Truncate any existing file entry or fail if it's another type
   entry::entry_ref entry;
@@ -257,6 +249,7 @@ static int vram_create(const char *path, mode_t, struct fuse_file_info *fi) {
 
 static int vram_mkdir(const char *path, mode_t) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Fail if entry with that name already exists
   entry::entry_ref entry;
@@ -289,6 +282,7 @@ static int vram_mkdir(const char *path, mode_t) {
 
 static int vram_symlink(const char *target, const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Fail if an entry with that name already exists
   entry::entry_ref entry;
@@ -322,6 +316,7 @@ static int vram_symlink(const char *target, const char *path) {
 
 static int vram_unlink(const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err =
@@ -340,6 +335,7 @@ static int vram_unlink(const char *path) {
 
 static int vram_rmdir(const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Fail if entry doesn't exist or is not a directory
   entry::entry_ref entry;
@@ -364,6 +360,7 @@ static int vram_rmdir(const char *path) {
 
 static int vram_rename(const char *path, const char *new_path) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   // Look up entry
   entry::entry_ref entry;
@@ -398,6 +395,7 @@ static int vram_rename(const char *path, const char *new_path) {
 
 static int vram_open(const char *path, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file);
@@ -417,6 +415,7 @@ static int vram_open(const char *path, fuse_file_info *fi) {
 static int vram_read(const char *path, char *buf, size_t size, off_t off,
                      fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   return session->file->read(off, size, buf, fsmutex);
@@ -429,6 +428,7 @@ static int vram_read(const char *path, char *buf, size_t size, off_t off,
 static int vram_write(const char *path, const char *buf, size_t size, off_t off,
                       fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   return session->file->write(off, size, buf);
@@ -440,6 +440,7 @@ static int vram_write(const char *path, const char *buf, size_t size, off_t off,
 
 static int vram_fsync(const char *path, int, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   session->file->sync();
@@ -453,6 +454,7 @@ static int vram_fsync(const char *path, int, fuse_file_info *fi) {
 
 static int vram_release(const char *path, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   delete reinterpret_cast<file_session *>(fi->fh);
 
@@ -465,6 +467,7 @@ static int vram_release(const char *path, fuse_file_info *fi) {
 
 static int vram_truncate(const char *path, off_t size) {
   lock_guard<mutex> local_lock(fsmutex);
+  std::cout << __FUNCTION__ << std::endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file);
