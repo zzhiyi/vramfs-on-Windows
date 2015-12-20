@@ -2,8 +2,6 @@
 #define _DOCAN_FUSE_H_
 
 #include <string>
-#include <memory>
-#include "dokan.h"
 
 #define FUSE_THREAD_COUNT 10
 #define DOKAN_DLL L"dokan.dll"
@@ -56,6 +54,8 @@ struct fuse
 	fuse() : within_loop(), user_data()
 	{
 		memset(&conf,0,sizeof(fuse_config));
+		memset(&sess, 0, sizeof(fuse_session));
+		memset(&ops, 0, sizeof(fuse_operations));
 	}
 };
 

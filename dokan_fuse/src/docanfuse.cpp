@@ -3,6 +3,7 @@
 #include "fusemain.h"
 #include "ScopeGuard.h"
 #include "docanfuse.h"
+//#include "dokani.h"
 #include <stdio.h>
 
 #ifdef __CYGWIN__
@@ -46,16 +47,6 @@ FuseFindFiles(LPCWSTR FileName,
       impl->find_files(FileName, FillFindData, DokanFileInfo));
 }
 
-static NTSTATUS DOKAN_CALLBACK
-FuseOpenDirectory(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo) {
-  impl_fuse_context *impl = the_impl;
-  if (impl->debug())
-    FWPRINTF(stderr, L"OpenDirectory : %s\n", FileName);
-
-  impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
-  return errno_to_ntstatus_error(impl->open_directory(FileName, DokanFileInfo));
-}
-
 static void DOKAN_CALLBACK FuseCleanup(LPCWSTR FileName,
                                        PDOKAN_FILE_INFO DokanFileInfo) {
   impl_fuse_context *impl = the_impl;
@@ -64,17 +55,6 @@ static void DOKAN_CALLBACK FuseCleanup(LPCWSTR FileName,
 
   impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
   impl->cleanup(FileName, DokanFileInfo);
-}
-
-static NTSTATUS DOKAN_CALLBACK
-FuseCreateDirectory(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo) {
-  impl_fuse_context *impl = the_impl;
-  if (impl->debug())
-    FWPRINTF(stderr, L"CreateDirectory : %s\n", FileName);
-
-  impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
-  return errno_to_ntstatus_error(
-      impl->create_directory(FileName, DokanFileInfo));
 }
 
 static NTSTATUS DOKAN_CALLBACK
@@ -144,17 +124,19 @@ CONST_VAL(FILE_SHARE_WRITE)
 CONST_END(cShareMode)
 
 CONST_START(cDisposition)
-CONST_VAL(CREATE_ALWAYS)
-CONST_VAL(CREATE_NEW)
-CONST_VAL(OPEN_ALWAYS)
-CONST_VAL(OPEN_EXISTING)
-CONST_VAL(TRUNCATE_EXISTING)
+CONST_VAL(FILE_SUPERSEDE)
+CONST_VAL(FILE_CREATE)
+CONST_VAL(FILE_OPEN)
+CONST_VAL(FILE_OPEN_IF)
+CONST_VAL(FILE_OVERWRITE)
+CONST_VAL(FILE_OVERWRITE_IF)
 CONST_END(cDisposition)
 
 void DebugConstant(const char *name, DWORD value, Constant *c) {
   while (c->name != NULL && c->value != value)
     ++c;
-  fprintf(stderr, "%s: %s (%d)\n", name, c->name ? c->name : "unknown!", value);
+  fprintf(stderr, "%s: %s (%lu)\n", name, c->name ? c->name : "unknown!",
+          value);
 }
 
 void DebugConstantBit(const char *name, DWORD value, Constant *cs) {
@@ -185,25 +167,40 @@ void DebugConstantBit(const char *name, DWORD value, Constant *cs) {
   fprintf(stderr, "\n");
 }
 
-static NTSTATUS DOKAN_CALLBACK FuseCreateFile(LPCWSTR FileName,
-                                              DWORD AccessMode, DWORD ShareMode,
-                                              DWORD CreationDisposition,
-                                              DWORD FlagsAndAttributes,
-                                              PDOKAN_FILE_INFO DokanFileInfo) {
+static NTSTATUS DOKAN_CALLBACK
+FuseCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext,
+               ACCESS_MASK DesiredAccess, ULONG FileAttributes,
+               ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions,
+               PDOKAN_FILE_INFO DokanFileInfo) {
   impl_fuse_context *impl = the_impl;
+
   if (impl->debug()) {
     FWPRINTF(stderr, L"CreateFile : %s\n", FileName);
-    DebugConstantBit("\tAccessMode", AccessMode, cAccessMode);
-    DebugConstantBit("\tShareMode", ShareMode, cShareMode);
-    DebugConstant("\tDisposition", CreationDisposition, cDisposition);
-    FWPRINTF(stderr, L"\tFlags: %u (0x%x)\n", FlagsAndAttributes,
-             FlagsAndAttributes);
+    DebugConstantBit("\tDesiredAccess", DesiredAccess, cAccessMode);
+    DebugConstantBit("\tShareAccess", ShareAccess, cShareMode);
+    DebugConstant("\tDisposition", CreateDisposition, cDisposition);
+    FWPRINTF(stderr, L"\tAttributes: %u (0x%x)\n", FileAttributes,
+             FileAttributes);
+    FWPRINTF(stderr, L"\tOptions: %u (0x%x)\n", CreateOptions, CreateOptions);
     fflush(stderr);
   }
 
   impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
-  return -win_error(impl->create_file(FileName, AccessMode, ShareMode,
-                                      CreationDisposition, FlagsAndAttributes,
+
+  if ((CreateOptions & FILE_DIRECTORY_FILE) == FILE_DIRECTORY_FILE) {
+
+    if (CreateDisposition == FILE_CREATE || CreateDisposition == FILE_OPEN_IF) {
+      return errno_to_ntstatus_error(
+          impl->create_directory(FileName, DokanFileInfo));
+    } else if (CreateDisposition == FILE_OPEN) {
+
+      return errno_to_ntstatus_error(
+          impl->open_directory(FileName, DokanFileInfo));
+    }
+  }
+
+  return -win_error(impl->create_file(FileName, CreateDisposition, ShareAccess,
+                                      DesiredAccess, FileAttributes,
                                       DokanFileInfo));
 }
 
@@ -238,7 +235,7 @@ static NTSTATUS DOKAN_CALLBACK FuseWriteFile(LPCWSTR FileName, LPCVOID Buffer,
                                              PDOKAN_FILE_INFO DokanFileInfo) {
   impl_fuse_context *impl = the_impl;
   if (impl->debug())
-    FWPRINTF(stderr, L"WriteFile : %s, offset %I64d, length %d\n", FileName,
+    FWPRINTF(stderr, L"WriteFile : %s, offset %I64d, length %lu\n", FileName,
              Offset, NumberOfBytesToWrite);
 
   impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
@@ -385,13 +382,22 @@ GetVolumeInformation(LPWSTR VolumeNameBuffer, DWORD VolumeNameSize,
       FileSystemNameSize, DokanFileInfo, FileSystemFlags));
 }
 
-static NTSTATUS DOKAN_CALLBACK FuseUnmount(PDOKAN_FILE_INFO DokanFileInfo) {
+static NTSTATUS DOKAN_CALLBACK FuseMounted(PDOKAN_FILE_INFO DokanFileInfo) {
+  impl_fuse_context *impl = the_impl;
+  if (impl->debug())
+    FWPRINTF(stderr, L"Mounted\n");
+
+  impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
+  return errno_to_ntstatus_error(impl->mounted(DokanFileInfo));
+}
+
+static NTSTATUS DOKAN_CALLBACK FuseUnmounted(PDOKAN_FILE_INFO DokanFileInfo) {
   impl_fuse_context *impl = the_impl;
   if (impl->debug())
     FWPRINTF(stderr, L"Unmount\n");
 
   impl_chain_guard guard(impl, DokanFileInfo->ProcessId);
-  return errno_to_ntstatus_error(impl->unmount(DokanFileInfo));
+  return errno_to_ntstatus_error(impl->unmounted(DokanFileInfo));
 }
 
 int fuse_interrupted(void) {
@@ -400,8 +406,6 @@ int fuse_interrupted(void) {
 
 static DOKAN_OPERATIONS dokanOperations = {
     FuseCreateFile,
-    FuseOpenDirectory,
-    FuseCreateDirectory,
     FuseCleanup,
     FuseCloseFile,
     FuseReadFile,
@@ -421,7 +425,8 @@ static DOKAN_OPERATIONS dokanOperations = {
     FuseUnlockFile,
     FuseGetDiskFreeSpace,
     GetVolumeInformation,
-    FuseUnmount,
+    FuseMounted,
+    FuseUnmounted,
     NULL, // GetFileSecurity
     NULL, // SetFileSecurity
 };
@@ -466,8 +471,10 @@ int do_fuse_loop(struct fuse *fs, bool mt) {
     dokanOptions->Options |= DOKAN_OPTION_DEBUG | DOKAN_OPTION_STDERR;
 
   // Load Dokan DLL
-  if (!fs->ch->init())
+  if (!fs->ch->init()) {
+    free(dokanOptions);
     return -1; // Couldn't load DLL. TODO: UGLY!!
+  }
 
   // The main loop!
   fs->within_loop = true;
@@ -508,7 +515,7 @@ fuse_chan::~fuse_chan() {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 ////// This are just "emulators" of native FUSE api for the sake of
-///compatibility
+/// compatibility
 ///////////////////////////////////////////////////////////////////////////////////////
 #define FUSE_LIB_OPT(t, p, v)                                                  \
   { t, offsetof(struct fuse_config, p), v }
@@ -607,7 +614,7 @@ void fuse_unmount(const char *mountpoint, struct fuse_chan *ch) {
 }
 
 // Used from fuse_helpers.c
-int fuse_session_exit(struct fuse_session *se) {
+extern int fuse_session_exit(struct fuse_session *se) {
   fuse_unmount(se->ch->mountpoint.c_str(), se->ch);
   return 0;
 }
