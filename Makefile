@@ -1,14 +1,12 @@
-CC = gcc
 CXX =  g++
-CFLAGS = -Wall -std=c11 -I include/ -I dokan_fuse/include -I"C:\Program Files\Dokan\DokanLibrary\include\dokan" -D_FILE_OFFSET_BITS=64
 CXXFLAGS = -Wall -std=c++11 -I include/ -I dokan_fuse/include -I"C:\Program Files\Dokan\DokanLibrary\include\dokan" -D_FILE_OFFSET_BITS=64
 LDFLAGS = -Llib/x64/Nvidia/ -L"C:\Windows\System32" -lOpenCL64 -ldokan
 
-ifeq ($(DEBUG), 1)
-	CXXFLAGS += -g -DDEBUG -D_
-else
-	CXXFLAGS += -g -march=native -O2
-endif
+#ifeq ($(DEBUG), 1)
+#	CXXFLAGS += -g -DDEBUG
+#else
+	CXXFLAGS += -g -O2
+#endif
 
 ifeq ($(OPENCL_1_1), 1)
 	CXXFLAGS += -DOPENCL_1_1
@@ -27,7 +25,7 @@ build/%.o: dokan_fuse/src/%.cpp | build
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 build/%.o: dokan_fuse/src/%.c | build
-	$(CXX) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:

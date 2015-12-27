@@ -172,7 +172,7 @@ err:
 
 int fuse_daemonize(int foreground) {
 /** No daemons on Windows */
-#ifndef __CYGWIN__ || __MINGW32__
+#ifndef __CYGWIN__
   if (!foreground) {
     int res = daemon(0, 0);
     if (res == -1) {
@@ -186,7 +186,7 @@ int fuse_daemonize(int foreground) {
 
 int fuse_version(void) { return FUSE_VERSION; }
 
-#ifdef __CYGWIN__ || __MINGW32__
+#ifdef __CYGWIN__
 static struct fuse_session *fuse_instance = NULL;
 
 static void exit_handler(int sig) {

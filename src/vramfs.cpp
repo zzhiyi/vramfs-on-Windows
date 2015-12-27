@@ -65,7 +65,7 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
  * Entry attributes
  */
 
-static int vram_getattr(const char *path, struct stat *stbuf) {
+static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
   std::cout << __FUNCTION__ << std::endl;
 
