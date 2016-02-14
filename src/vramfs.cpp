@@ -6,7 +6,6 @@
 // Standard library
 #include <iostream>
 #include <cstring>
-#include <cstdlib>
 #include <cstdint>
 #include <limits>
 #include <regex>
@@ -15,18 +14,14 @@
 #include "vramfs.hpp"
 
 using namespace vram;
-using namespace std;
 
 /*
  * Globals
  */
 
-// Lock to prevent multiple threads from manipulating the file system index
-// and
-// OpenCL buffers simultaneously. The tiny overhead is worth not having to
-// deal
-// with the uncountable amount of race conditions that would otherwise
-// occur.
+// Lock to prevent multiple threads from manipulating the file system index and
+// OpenCL buffers simultaneously. The tiny overhead is worth not having to deal
+// with the uncountable amount of race conditions that would otherwise occur.
 static std::mutex fsmutex;
 
 // File system root that links to the rest
@@ -37,12 +32,11 @@ static entry::dir_ref root_entry;
  */
 
 static void *vram_init(fuse_conn_info *conn) {
-  cout << __FUNCTION__ << endl;
   root_entry = entry::dir_t::make(nullptr, "");
   root_entry->user(geteuid());
   root_entry->group(getegid());
 
-  cout << "mounted." << endl;
+  std::cout << "mounted." << std::endl;
 
   return nullptr;
 }
@@ -52,8 +46,6 @@ static void *vram_init(fuse_conn_info *conn) {
  */
 
 static int vram_statfs(const char *, struct statvfs *vfs) {
-  cout << __FUNCTION__ << endl;
-  // cout << "sizeof(struct statvfs):" << sizeof(struct statvfs) << endl;
   vfs->f_bsize = memory::block::size;
   vfs->f_blocks = memory::pool_size();
   vfs->f_bfree = memory::pool_available();
@@ -62,14 +54,6 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
   vfs->f_ffree = std::numeric_limits<fsfilcnt_t>::max();
   vfs->f_namemax = std::numeric_limits<unsigned long>::max();
 
-  cout << "->f_bsize:" << vfs->f_bsize << endl;
-  cout << "->f_blocks:" << vfs->f_blocks << endl;
-  cout << "->f_bfree:" << vfs->f_bfree << endl;
-  cout << "->f_bavail:" << vfs->f_bavail << endl;
-  cout << "->f_files:" << vfs->f_files << endl;
-  cout << "->f_ffree:" << vfs->f_ffree << endl;
-  cout << "->f_namemax:" << vfs->f_namemax << endl;
-
   return 0;
 }
 
@@ -77,19 +61,16 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
  * Entry attributes
  */
 
-static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
+static int vram_getattr(const char *path, struct stat *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << " path:" << path << endl;
 
   // Look up entry
   entry::entry_ref entry;
   int err = root_entry->find(path, entry);
-  if (err != 0) {
-    std::cerr << __FUNCTION__ << " return err:" << err << endl;
+  if (err != 0)
     return err;
-  }
 
-  memset(stbuf, 0, sizeof(struct FUSE_STAT));
+  memset(stbuf, 0, sizeof(struct stat));
 
   if (entry->type() == entry::type::dir) {
     stbuf->st_mode = S_IFDIR | entry->mode();
@@ -123,7 +104,6 @@ static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
 
 static int vram_readlink(const char *path, char *buf, size_t size) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::symlink);
@@ -142,7 +122,6 @@ static int vram_readlink(const char *path, char *buf, size_t size) {
 
 static int vram_chmod(const char *path, mode_t mode) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -160,7 +139,6 @@ static int vram_chmod(const char *path, mode_t mode) {
 
 static int vram_chown(const char *path, uid_t user, gid_t group) {
   lock_guard<mutex> lock_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -179,7 +157,6 @@ static int vram_chown(const char *path, uid_t user, gid_t group) {
 
 static int vram_utimens(const char *path, const timespec tv[2]) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file | entry::type::dir);
@@ -199,15 +176,12 @@ static int vram_utimens(const char *path, const timespec tv[2]) {
 static int vram_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                         off_t, fuse_file_info *) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << " path:" << path << endl;
 
   // Look up directory
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::dir);
-  if (err != 0) {
-    std::cerr << __FUNCTION__ << "return err:" << err << endl;
+  if (err != 0)
     return err;
-  }
   auto dir = dynamic_pointer_cast<entry::dir_t>(entry);
 
   // Required default entries
@@ -216,7 +190,6 @@ static int vram_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   for (auto &pair : dir->children()) {
     filler(buf, pair.second->name().c_str(), nullptr, 0);
-    cout << "->" << pair.second->name() << endl;
   }
 
   return 0;
@@ -228,7 +201,6 @@ static int vram_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int vram_create(const char *path, mode_t, struct fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   // Truncate any existing file entry or fail if it's another type
   entry::entry_ref entry;
@@ -266,7 +238,6 @@ static int vram_create(const char *path, mode_t, struct fuse_file_info *fi) {
 
 static int vram_mkdir(const char *path, mode_t) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << " path:" << path << endl;
 
   // Fail if entry with that name already exists
   entry::entry_ref entry;
@@ -299,7 +270,6 @@ static int vram_mkdir(const char *path, mode_t) {
 
 static int vram_symlink(const char *target, const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   // Fail if an entry with that name already exists
   entry::entry_ref entry;
@@ -333,15 +303,12 @@ static int vram_symlink(const char *target, const char *path) {
 
 static int vram_unlink(const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << " path:" << path << endl;
 
   entry::entry_ref entry;
   int err =
       root_entry->find(path, entry, entry::type::symlink | entry::type::file);
-  if (err != 0) {
-    cerr << __FUNCTION__ << " return err:" << err << endl;
+  if (err != 0)
     return err;
-  }
 
   entry->unlink();
 
@@ -354,7 +321,6 @@ static int vram_unlink(const char *path) {
 
 static int vram_rmdir(const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   // Fail if entry doesn't exist or is not a directory
   entry::entry_ref entry;
@@ -379,7 +345,6 @@ static int vram_rmdir(const char *path) {
 
 static int vram_rename(const char *path, const char *new_path) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   // Look up entry
   entry::entry_ref entry;
@@ -414,7 +379,6 @@ static int vram_rename(const char *path, const char *new_path) {
 
 static int vram_open(const char *path, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file);
@@ -434,7 +398,6 @@ static int vram_open(const char *path, fuse_file_info *fi) {
 static int vram_read(const char *path, char *buf, size_t size, off_t off,
                      fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   return session->file->read(off, size, buf, fsmutex);
@@ -447,7 +410,6 @@ static int vram_read(const char *path, char *buf, size_t size, off_t off,
 static int vram_write(const char *path, const char *buf, size_t size, off_t off,
                       fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   return session->file->write(off, size, buf);
@@ -459,7 +421,6 @@ static int vram_write(const char *path, const char *buf, size_t size, off_t off,
 
 static int vram_fsync(const char *path, int, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   file_session *session = reinterpret_cast<file_session *>(fi->fh);
   session->file->sync();
@@ -473,7 +434,6 @@ static int vram_fsync(const char *path, int, fuse_file_info *fi) {
 
 static int vram_release(const char *path, fuse_file_info *fi) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   delete reinterpret_cast<file_session *>(fi->fh);
 
@@ -486,7 +446,6 @@ static int vram_release(const char *path, fuse_file_info *fi) {
 
 static int vram_truncate(const char *path, off_t size) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ << endl;
 
   entry::entry_ref entry;
   int err = root_entry->find(path, entry, entry::type::file);
@@ -529,17 +488,31 @@ static struct vram_operations : fuse_operations {
 } operations;
 
 static int print_help() {
-  std::cerr << "usage: vramfs <mountdir> <size> [-f]\n\n"
-               "  mountdir - directory to mount file system, must be empty\n"
-               "  size     - size of the disk in bytes\n"
-               "  -f       - flag that forces mounting, with a smaller size if "
-               "needed\n\n"
+  std::cerr << "usage: vramfs <mountdir> <size> [-d <device>] [-f]\n\n"
+               "  mountdir    - directory to mount file system, must be empty\n"
+               "  size        - size of the disk in bytes\n"
+               "  -d <device> - specifies identifier of device to use\n"
+               "  -f          - flag that forces mounting, with a smaller size "
+               "if needed\n\n"
                "The size may be followed by one of the following "
                "multiplicative suffixes: "
                "K=1024, KB=1000, M=1024*1024, MB=1000*1000, G=1024*1024*1024, "
                "GB=1000*1000*1000. "
-               "It's rounded up to the nearest multiple of the block size."
-            << endl;
+               "It's rounded up to the nearest multiple of the block size.\n"
+            << std::endl;
+
+  auto devices = memory::list_devices();
+
+  if (!devices.empty()) {
+    std::cerr << "device list: \n";
+
+    for (size_t i = 0; i < devices.size(); ++i) {
+      std::cerr << "  " << i << ": " << devices[i] << "\n";
+    }
+    std::cerr << std::endl;
+  } else {
+    std::cerr << "No suitable devices found." << std::endl;
+  }
 
   return 1;
 }
@@ -550,11 +523,7 @@ static size_t parse_size(const string &param) {
   std::smatch groups;
   std::regex_search(param, groups, size_regex);
 
-  /*
-   * use strtoul instead of std::stoul in c++ because msys2 g++
-   * doesn't have std::stoul
-   */
-  size_t size = strtoul(groups[1].str().c_str(), NULL, 0);
+  size_t size = strtoul(groups[1].str().c_str(), 0, 10);
 
   if (groups[2] == "K")
     size *= 1024UL;
@@ -574,33 +543,44 @@ static size_t parse_size(const string &param) {
 
 int main(int argc, char *argv[]) {
   // Check parameter and parse parameters
-  if (argc != 3 && argc != 4)
+  if (argc < 3 || argc > 6)
     return print_help();
   if (!std::regex_match(argv[2], size_regex))
     return print_help();
   if (argc == 4 && strcmp(argv[3], "-f") != 0)
     return print_help();
+  if (argc == 5 && strcmp(argv[3], "-d") != 0)
+    return print_help();
+  if (argc == 6) {
+    if (strcmp(argv[3], "-d") != 0 && strcmp(argv[5], "-f") != 0) {
+      return print_help();
+    }
+  }
 
   size_t disk_size = parse_size(argv[2]);
-  bool force_allocate = argc == 4;
+  bool force_allocate = (argc == 4 || argc == 6);
+
+  if (argc == 5 || argc == 6) {
+    memory::set_device(atoi(argv[4]));
+  }
 
   // Check for OpenCL supported GPU and allocate memory
   if (!memory::is_available()) {
-    std::cerr << "no opencl capable gpu found" << endl;
+    std::cerr << "no opencl capable gpu found" << std::endl;
     return 1;
   } else {
-    cout << "allocating vram..." << endl;
+    std::cout << "allocating vram..." << std::endl;
 
     size_t actual_size = memory::increase_pool(disk_size);
 
     if (actual_size < disk_size) {
       if (force_allocate) {
         std::cerr << "warning: only allocated " << actual_size << " bytes"
-                  << endl;
+                  << std::endl;
       } else {
         std::cerr << "error: could not allocate more than " << actual_size
-                  << " bytes" << endl;
-        std::cerr << "cleaning up..." << endl;
+                  << " bytes" << std::endl;
+        std::cerr << "cleaning up..." << std::endl;
         return 1;
       }
     }

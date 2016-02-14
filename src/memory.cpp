@@ -15,6 +15,8 @@ cl::Buffer zero_buffer; // used to clear buffers on pre-1.2 platforms
 std::vector<cl::Buffer> pool;
 int total_blocks = 0;
 
+size_t device_num;
+
 // Fill buffer with zeros
 static int clear_buffer(const cl::Buffer &buf) {
 #ifdef CL_VERSION_1_2
@@ -38,13 +40,11 @@ static bool init_opencl() {
 
   for (auto &platform : platforms) {
     std::vector<cl::Device> gpu_devices;
-    // Use CPU instead for developing
-    // change to CL_DEVICE_TYPE_GPU later
-    platform.getDevices(CL_DEVICE_TYPE_CPU, &gpu_devices);
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &gpu_devices);
     if (gpu_devices.size() == 0)
       continue;
 
-    device = gpu_devices[0];
+    device = gpu_devices[device_num];
     context = cl::Context(gpu_devices);
     queue = cl::CommandQueue(context, device);
 
@@ -76,6 +76,30 @@ static CL_CALLBACK void async_write_dealloc(cl_event, cl_int, void *data) {
 }
 
 bool is_available() { return (ready = init_opencl()); }
+
+void set_device(size_t device) { device_num = device; }
+
+std::vector<std::string> list_devices() {
+  std::vector<std::string> device_names;
+
+  std::vector<cl::Platform> platforms;
+  cl::Platform::get(&platforms);
+
+  for (auto &platform : platforms) {
+    std::vector<cl::Device> gpu_devices;
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &gpu_devices);
+    if (gpu_devices.size() == 0)
+      continue;
+
+    for (auto &device : gpu_devices) {
+      device_names.push_back(device.getInfo<CL_DEVICE_NAME>());
+    }
+
+    break;
+  }
+
+  return device_names;
+}
 
 int pool_size() { return total_blocks; }
 
