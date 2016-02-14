@@ -615,7 +615,7 @@ int main(int argc, char *argv[]) {
   fuse_opt_add_arg(&args, "-obig_writes");
 
   // Properly unmount even on crash
-  fuse_opt_add_arg(&args, "-oauto_unmount");
+  // fuse_opt_add_arg(&args, "-oauto_unmount");
 
   // Let FUSE and the kernel deal with permissions handling
   fuse_opt_add_arg(&args, "-odefault_permissions");
