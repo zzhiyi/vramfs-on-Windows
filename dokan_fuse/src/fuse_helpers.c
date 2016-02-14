@@ -26,7 +26,7 @@ struct helper_opts {
   char *mountpoint;
 };
 
-extern int fuse_session_exit(struct fuse_session *se);
+extern "C" int fuse_session_exit(struct fuse_session *se);
 
 #ifdef _MSC_VER
 static char *realpath(const char *file_name, char *resolved_name) {
@@ -172,14 +172,15 @@ err:
 
 int fuse_daemonize(int foreground) {
 /** No daemons on Windows */
-#ifndef __CYGWIN__
-  if (!foreground) {
-    int res = daemon(0, 0);
-    if (res == -1) {
-      perror("fuse: failed to daemonize program\n");
-      return -1;
-    }
-  }
+//#ifdef __CYGWIN__
+#if 0
+	if (!foreground) {
+		int res = daemon(0, 0);
+		if (res == -1) {
+			perror("fuse: failed to daemonize program\n");
+			return -1;
+		}
+	}
 #endif
   return 0;
 }

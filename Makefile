@@ -1,11 +1,11 @@
 CXX =  g++
-CXXFLAGS = -Wall -std=c++11 -I include/ -I dokan_fuse/include -I"C:\Program Files\Dokan\DokanLibrary\include\dokan" -D_FILE_OFFSET_BITS=64
-LDFLAGS = -Llib/x64/Nvidia/ -L"C:\Windows\System32" -lOpenCL64 -ldokan
+CXXFLAGS = -Wall -std=c++11 -I include/ -I dokan_fuse/include -I"C:\Program Files\Dokan\Dokan Library-1.0.0\include\dokan" -D_FILE_OFFSET_BITS=64
+LDFLAGS = -Llib/ -L"C:\Program Files\Dokan\Dokan Library-1.0.0" -lOpenCL -ldokan1
 
 #ifeq ($(DEBUG), 1)
 #	CXXFLAGS += -g -DDEBUG
 #else
-	CXXFLAGS += -g -O2
+	CXXFLAGS += -g -ggdb -O2
 #endif
 
 ifeq ($(OPENCL_1_1), 1)
@@ -13,7 +13,7 @@ ifeq ($(OPENCL_1_1), 1)
 endif
 
 bin/vramfs: build/util.o build/memory.o build/entry.o build/file.o build/dir.o build/symlink.o build/vramfs.o build/docanfuse.o build/fuse_helpers.o build/fuse_opt.o build/fusemain.o build/utils.o | bin
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 build bin:
 	@mkdir -p $@

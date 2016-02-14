@@ -3,7 +3,7 @@
 #include "fusemain.h"
 #include "ScopeGuard.h"
 #include "docanfuse.h"
-//#include "dokani.h"
+//#include "../../dokan/dokani.h"
 #include <stdio.h>
 
 #ifdef __CYGWIN__
@@ -199,9 +199,8 @@ FuseCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext,
     }
   }
 
-  return -win_error(impl->create_file(FileName, CreateDisposition, ShareAccess,
-                                      DesiredAccess, FileAttributes,
-                                      DokanFileInfo));
+  return impl->create_file(FileName, DesiredAccess, ShareAccess,
+                           CreateDisposition, FileAttributes, DokanFileInfo);
 }
 
 static void DOKAN_CALLBACK FuseCloseFile(LPCWSTR FileName,
@@ -465,6 +464,7 @@ int do_fuse_loop(struct fuse *fs, bool mt) {
   dokanOptions->Version = DOKAN_VERSION;
   dokanOptions->MountPoint = mount;
   dokanOptions->ThreadCount = mt ? FUSE_THREAD_COUNT : 1;
+  dokanOptions->Timeout = fs->conf.timeoutInSec * 1000;
 
   // Debug
   if (fs->conf.debug)
@@ -535,6 +535,7 @@ static const struct fuse_opt fuse_lib_opts[] = {
     FUSE_LIB_OPT("fsname=%s", fsname, 0),
     FUSE_LIB_OPT("volname=%s", volname, 0),
     FUSE_LIB_OPT("setsignals=%s", setsignals, 0),
+    FUSE_LIB_OPT("daemon_timeout=%d", timeoutInSec, 0),
     FUSE_OPT_END};
 
 static void fuse_lib_help(void) {
@@ -546,6 +547,7 @@ static void fuse_lib_help(void) {
       "    -o fsname=M            set filesystem name\n"
       "    -o volname=M           set volume name\n"
       "    -o setsignals=M        set signal usage (1 to use)\n"
+      "    -o daemon_timeout=M    set timeout in seconds\n"
       "\n");
 }
 
@@ -614,7 +616,7 @@ void fuse_unmount(const char *mountpoint, struct fuse_chan *ch) {
 }
 
 // Used from fuse_helpers.c
-extern int fuse_session_exit(struct fuse_session *se) {
+extern "C" int fuse_session_exit(struct fuse_session *se) {
   fuse_unmount(se->ch->mountpoint.c_str(), se->ch);
   return 0;
 }
