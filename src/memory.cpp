@@ -40,7 +40,7 @@ static bool init_opencl() {
 
   for (auto &platform : platforms) {
     std::vector<cl::Device> gpu_devices;
-    platform.getDevices(CL_DEVICE_TYPE_ALL, &gpu_devices);
+    platform.getDevices(CL_DEVICE_TYPE_CPU, &gpu_devices);
     if (gpu_devices.size() == 0)
       continue;
 
@@ -87,7 +87,7 @@ std::vector<std::string> list_devices() {
 
   for (auto &platform : platforms) {
     std::vector<cl::Device> gpu_devices;
-    platform.getDevices(CL_DEVICE_TYPE_ALL, &gpu_devices);
+    platform.getDevices(CL_DEVICE_TYPE_CPU, &gpu_devices);
     if (gpu_devices.size() == 0)
       continue;
 

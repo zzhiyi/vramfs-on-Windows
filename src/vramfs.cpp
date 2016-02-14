@@ -603,5 +603,7 @@ int main(int argc, char *argv[]) {
   // OpenCL driver acts funky if program doesn't keep running in foreground
   fuse_opt_add_arg(&args, "-f");
 
+  fuse_opt_add_arg(&args, "-o daemon_timeout=1000");
+
   return fuse_main(args.argc, args.argv, &operations, nullptr);
 }
