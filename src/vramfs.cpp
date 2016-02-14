@@ -61,7 +61,7 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
  * Entry attributes
  */
 
-static int vram_getattr(const char *path, struct stat *stbuf) {
+static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
 
   // Look up entry
@@ -70,7 +70,7 @@ static int vram_getattr(const char *path, struct stat *stbuf) {
   if (err != 0)
     return err;
 
-  memset(stbuf, 0, sizeof(struct stat));
+  memset(stbuf, 0, sizeof(struct FUSE_STAT));
 
   if (entry->type() == entry::type::dir) {
     stbuf->st_mode = S_IFDIR | entry->mode();
