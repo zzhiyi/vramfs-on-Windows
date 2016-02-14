@@ -21,9 +21,12 @@ using namespace std;
  * Globals
  */
 
-// Lock to prevent multiple threads from manipulating the file system index and
-// OpenCL buffers simultaneously. The tiny overhead is worth not having to deal
-// with the uncountable amount of race conditions that would otherwise occur.
+// Lock to prevent multiple threads from manipulating the file system index
+// and
+// OpenCL buffers simultaneously. The tiny overhead is worth not having to
+// deal
+// with the uncountable amount of race conditions that would otherwise
+// occur.
 static std::mutex fsmutex;
 
 // File system root that links to the rest
@@ -50,7 +53,7 @@ static void *vram_init(fuse_conn_info *conn) {
 
 static int vram_statfs(const char *, struct statvfs *vfs) {
   cout << __FUNCTION__ << endl;
-  //cout << "sizeof(struct statvfs):" << sizeof(struct statvfs) << endl;
+  // cout << "sizeof(struct statvfs):" << sizeof(struct statvfs) << endl;
   vfs->f_bsize = memory::block::size;
   vfs->f_blocks = memory::pool_size();
   vfs->f_bfree = memory::pool_available();
@@ -59,13 +62,13 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
   vfs->f_ffree = std::numeric_limits<fsfilcnt_t>::max();
   vfs->f_namemax = std::numeric_limits<unsigned long>::max();
 
-  cout<<"->f_bsize:"<<vfs->f_bsize<<endl;
-  cout<<"->f_blocks:"<<vfs->f_blocks<<endl;
-  cout<<"->f_bfree:"<<vfs->f_bfree<<endl;
-  cout<<"->f_bavail:"<<vfs->f_bavail<<endl;
-  cout<<"->f_files:"<<vfs->f_files<<endl;
-  cout<<"->f_ffree:"<<vfs->f_ffree<<endl;
-  cout<<"->f_namemax:"<<vfs->f_namemax<<endl;
+  cout << "->f_bsize:" << vfs->f_bsize << endl;
+  cout << "->f_blocks:" << vfs->f_blocks << endl;
+  cout << "->f_bfree:" << vfs->f_bfree << endl;
+  cout << "->f_bavail:" << vfs->f_bavail << endl;
+  cout << "->f_files:" << vfs->f_files << endl;
+  cout << "->f_ffree:" << vfs->f_ffree << endl;
+  cout << "->f_namemax:" << vfs->f_namemax << endl;
 
   return 0;
 }
@@ -330,7 +333,7 @@ static int vram_symlink(const char *target, const char *path) {
 
 static int vram_unlink(const char *path) {
   lock_guard<mutex> local_lock(fsmutex);
-  cout << __FUNCTION__ <<" path:"<<path<<endl;
+  cout << __FUNCTION__ << " path:" << path << endl;
 
   entry::entry_ref entry;
   int err =
