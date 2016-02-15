@@ -6,6 +6,7 @@ LDFLAGS = -Llib/ -L"C:\Program Files\Dokan\Dokan Library-1.0.0" -lOpenCL -ldokan
 #	CXXFLAGS += -g -DDEBUG
 #else
 	CXXFLAGS += -g -ggdb -O2
+	#CXXFLAGS +=-O2
 #endif
 
 ifeq ($(OPENCL_1_1), 1)
@@ -19,12 +20,6 @@ build bin:
 	@mkdir -p $@
 
 build/%.o: src/%.cpp | build
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-build/%.o: dokan_fuse/src/%.cpp | build
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-build/%.o: dokan_fuse/src/%.c | build
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 .PHONY: clean

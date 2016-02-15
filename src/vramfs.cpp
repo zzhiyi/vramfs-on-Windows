@@ -562,6 +562,9 @@ int main(int argc, char *argv[]) {
 
   if (argc == 5 || argc == 6) {
     memory::set_device(atoi(argv[4]));
+    std::cout << "device set to:" << atoi(argv[4]) << std::endl;
+  } else {
+    memory::set_device(0);
   }
 
   // Check for OpenCL supported GPU and allocate memory
@@ -595,7 +598,7 @@ int main(int argc, char *argv[]) {
   fuse_opt_add_arg(&args, "-obig_writes");
 
   // Properly unmount even on crash
-  // fuse_opt_add_arg(&args, "-oauto_unmount");
+  fuse_opt_add_arg(&args, "-oauto_unmount");
 
   // Let FUSE and the kernel deal with permissions handling
   fuse_opt_add_arg(&args, "-odefault_permissions");
@@ -604,6 +607,8 @@ int main(int argc, char *argv[]) {
   fuse_opt_add_arg(&args, "-f");
 
   fuse_opt_add_arg(&args, "-o daemon_timeout=1000");
+  // debug
+  fuse_opt_add_arg(&args, "-d");
 
   return fuse_main(args.argc, args.argv, &operations, nullptr);
 }

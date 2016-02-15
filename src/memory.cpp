@@ -15,7 +15,7 @@ cl::Buffer zero_buffer; // used to clear buffers on pre-1.2 platforms
 std::vector<cl::Buffer> pool;
 int total_blocks = 0;
 
-size_t device_num;
+size_t device_num = 0;
 
 // Fill buffer with zeros
 static int clear_buffer(const cl::Buffer &buf) {
