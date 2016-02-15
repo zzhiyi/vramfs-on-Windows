@@ -5,13 +5,13 @@ LDFLAGS = -Llib/ -L"C:\Program Files\Dokan\Dokan Library-1.0.0" -lOpenCL -ldokan
 #ifeq ($(DEBUG), 1)
 #	CXXFLAGS += -g -DDEBUG
 #else
-	CXXFLAGS += -g -ggdb -O2
+	CXXFLAGS += -g -ggdb -O2 -DOPENCL_1_1
 	#CXXFLAGS +=-O2
 #endif
 
-ifeq ($(OPENCL_1_1), 1)
-	CXXFLAGS += -DOPENCL_1_1
-endif
+#ifeq ($(OPENCL_1_1), 1)
+#	CXXFLAGS += 
+#endif
 
 bin/vramfs: build/util.o build/memory.o build/entry.o build/file.o build/dir.o build/symlink.o build/vramfs.o  | bin
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)

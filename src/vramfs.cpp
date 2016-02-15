@@ -563,9 +563,9 @@ int main(int argc, char *argv[]) {
   if (argc == 5 || argc == 6) {
     memory::set_device(atoi(argv[4]));
     std::cout << "device set to:" << atoi(argv[4]) << std::endl;
-  } else {
-    memory::set_device(0);
-  }
+  } /* else {
+     memory::set_device(0);
+   }*/
 
   // Check for OpenCL supported GPU and allocate memory
   if (!memory::is_available()) {

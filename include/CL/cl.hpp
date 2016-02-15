@@ -143,7 +143,7 @@
  * \endcode
  *
  */
-#define alloca __builtin_alloca
+//#define alloca __builtin_alloca
 #ifndef CL_HPP_
 #define CL_HPP_
 
