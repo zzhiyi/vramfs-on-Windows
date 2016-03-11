@@ -608,7 +608,7 @@ int main(int argc, char *argv[]) {
 
   fuse_opt_add_arg(&args, "-o daemon_timeout=1000");
   // debug
-  fuse_opt_add_arg(&args, "-d");
+  // fuse_opt_add_arg(&args, "-d");
 
   return fuse_main(args.argc, args.argv, &operations, nullptr);
 }
