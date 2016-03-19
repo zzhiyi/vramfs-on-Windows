@@ -162,7 +162,7 @@ int impl_fuse_context::do_delete_directory(LPCWSTR file_name,
     return -EBUSY;
 
   // A special case: symlinks are deleted by unlink, not rmdir
-  struct FUSE_STAT stbuf = {0};
+  struct stat stbuf = {0};
   CHECKED(ops_.getattr(fname.c_str(), &stbuf));
   if (S_ISLNK(stbuf.st_mode) && ops_.unlink)
     return ops_.unlink(fname.c_str());
@@ -254,7 +254,7 @@ int impl_fuse_context::check_and_resolve(std::string *name) {
   if (!ops_.getattr)
     return -EINVAL;
 
-  struct FUSE_STAT stat = {0};
+  struct stat stat = {0};
   CHECKED(ops_.getattr(name->c_str(), &stat));
   if (S_ISLNK(stat.st_mode))
     CHECKED(resolve_symlink(*name, name));
@@ -263,7 +263,7 @@ int impl_fuse_context::check_and_resolve(std::string *name) {
 }
 
 int impl_fuse_context::walk_directory(void *buf, const char *name,
-                                      const struct FUSE_STAT *stbuf,
+                                      const struct stat *stbuf,
                                       FUSE_OFF_T off) {
   walk_data *wd = static_cast<walk_data *>(buf);
   WIN32_FIND_DATAW find_data = {0};
@@ -271,7 +271,7 @@ int impl_fuse_context::walk_directory(void *buf, const char *name,
   utf8_to_wchar_buf(name, find_data.cFileName, MAX_PATH);
   // fix name if wrong encoding
   if (!find_data.cFileName[0]) {
-    struct FUSE_STAT stbuf = {0};
+    struct stat stbuf = {0};
     utf8_to_wchar_buf_old(name, find_data.cFileName, MAX_PATH);
     std::string new_name = wchar_to_utf8_cstr(find_data.cFileName);
     if (wd->ctx->ops_.getattr && wd->ctx->ops_.rename && new_name.length() &&
@@ -280,7 +280,7 @@ int impl_fuse_context::walk_directory(void *buf, const char *name,
   }
   memset(find_data.cAlternateFileName, 0, sizeof(find_data.cAlternateFileName));
 
-  struct FUSE_STAT stat = {0};
+  struct stat stat = {0};
 
   if (stbuf != NULL)
     stat = *stbuf;
@@ -370,7 +370,7 @@ int impl_fuse_context::open_directory(LPCWSTR file_name,
 
   // We don't have opendir(), so the most we can do is make sure
   // that the target is indeed a directory
-  struct FUSE_STAT st = {0};
+  struct stat st = {0};
   CHECKED(ops_.getattr(fname.c_str(), &st));
   if (S_ISLNK(st.st_mode)) {
     std::string resolved;
@@ -431,7 +431,7 @@ int impl_fuse_context::delete_directory(LPCWSTR file_name,
   if (!ops_.getattr)
     return -EINVAL;
 
-  struct FUSE_STAT stbuf = {0};
+  struct stat stbuf = {0};
   return ops_.getattr(fname.c_str(), &stbuf);
 }
 
@@ -446,7 +446,7 @@ win_error impl_fuse_context::create_file(LPCWSTR file_name, DWORD access_mode,
   if (!ops_.getattr)
     return -EINVAL;
 
-  struct FUSE_STAT stbuf = {0};
+  struct stat stbuf = {0};
   // Check if the target file/directory exists
   if (ops_.getattr(fname.c_str(), &stbuf) < 0) {
     // Nope.
@@ -631,7 +631,7 @@ int impl_fuse_context::get_file_information(
   if (!ops_.getattr)
     return -EINVAL;
 
-  struct FUSE_STAT st = {0};
+  struct stat st = {0};
   CHECKED(ops_.getattr(fname.c_str(), &st));
   if (S_ISLNK(st.st_mode)) {
     std::string resolved;
@@ -660,7 +660,7 @@ int impl_fuse_context::delete_file(LPCWSTR file_name,
   if (!ops_.getattr)
     return -EINVAL;
 
-  struct FUSE_STAT stbuf = {0};
+  struct stat stbuf = {0};
   return ops_.getattr(fname.c_str(), &stbuf);
 }
 
@@ -673,7 +673,7 @@ int impl_fuse_context::move_file(LPCWSTR file_name, LPCWSTR new_file_name,
   std::string name = unixify(wchar_to_utf8_cstr(file_name));
   std::string new_name = unixify(wchar_to_utf8_cstr(new_file_name));
 
-  struct FUSE_STAT stbuf = {0};
+  struct stat stbuf = {0};
   if (ops_.getattr(new_name.c_str(), &stbuf) != -ENOENT) {
     if (!replace_existing)
       return -EEXIST;
@@ -836,7 +836,7 @@ int impl_fuse_context::set_file_time(PCWSTR file_name,
   std::string fname = unixify(wchar_to_utf8_cstr(file_name));
   CHECKED(check_and_resolve(&fname));
 
-  struct FUSE_STAT st = {0};
+  struct stat st = {0};
   CHECKED(ops_.getattr(fname.c_str(), &st));
 
   if (ops_.utimens) {

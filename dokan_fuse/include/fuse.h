@@ -15,7 +15,7 @@
 typedef struct _FILETIME FILETIME;
 #else
 #define FUSE_OFF_T off_t
-#define FUSE_STAT stat
+//#define stat stat
 #endif
 
 /* Add semaphore fix for Cygwin. TODO: think of a better workaround? */
@@ -78,7 +78,7 @@ struct fuse_cmd;
  * @return 1 if buffer is full, zero otherwise
  */
 typedef int (*fuse_fill_dir_t) (void *buf, const char *name,
-				const struct FUSE_STAT *stbuf, FUSE_OFF_T off);
+				const struct stat *stbuf, FUSE_OFF_T off);
 
 /* Used by deprecated getdir() method */
 typedef struct fuse_dirhandle *fuse_dirh_t;
@@ -104,7 +104,7 @@ struct fuse_operations {
 	 * ignored.	 The 'st_ino' field is ignored except if the 'use_ino'
 	 * mount option is given.
 	 */
-	int (*getattr) (const char *, struct FUSE_STAT *);
+	int (*getattr) (const char *, struct stat *);
 
 	/** Read the target of a symbolic link
 	 *
@@ -390,7 +390,7 @@ struct fuse_operations {
 	 *
 	 * Introduced in version 2.5
 	 */
-	int (*fgetattr) (const char *, struct FUSE_STAT *, struct fuse_file_info *);
+	int (*fgetattr) (const char *, struct stat *, struct fuse_file_info *);
 
 	/**
 	 * Perform POSIX file locking operation
@@ -624,8 +624,8 @@ struct fuse_fs;
  * fuse_fs_releasedir and fuse_fs_statfs, which return 0.
  */
 
-int fuse_fs_getattr(struct fuse_fs *fs, const char *path, struct FUSE_STAT *buf);
-int fuse_fs_fgetattr(struct fuse_fs *fs, const char *path, struct FUSE_STAT *buf,
+int fuse_fs_getattr(struct fuse_fs *fs, const char *path, struct stat *buf);
+int fuse_fs_fgetattr(struct fuse_fs *fs, const char *path, struct stat *buf,
 		     struct fuse_file_info *fi);
 int fuse_fs_rename(struct fuse_fs *fs, const char *oldpath,
 		   const char *newpath);
@@ -838,7 +838,7 @@ struct fuse_session *fuse_get_session(struct fuse *f);
 #      define __fuse_exited fuse_exited
 #      define __fuse_set_getcontext_func fuse_set_getcontext_func
 #    else
-#      define fuse_statfs fuse_statfs_compat1
+#      define statfs statfs_compat1
 #      define fuse_operations fuse_operations_compat1
 #      define fuse_main fuse_main_compat1
 #      define fuse_new fuse_new_compat1

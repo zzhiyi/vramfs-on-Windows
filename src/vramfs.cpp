@@ -61,7 +61,7 @@ static int vram_statfs(const char *, struct statvfs *vfs) {
  * Entry attributes
  */
 
-static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
+static int vram_getattr(const char *path, struct stat *stbuf) {
   lock_guard<mutex> local_lock(fsmutex);
 
   // Look up entry
@@ -70,7 +70,7 @@ static int vram_getattr(const char *path, struct FUSE_STAT *stbuf) {
   if (err != 0)
     return err;
 
-  memset(stbuf, 0, sizeof(struct FUSE_STAT));
+  memset(stbuf, 0, sizeof(struct stat));
 
   if (entry->type() == entry::type::dir) {
     stbuf->st_mode = S_IFDIR | entry->mode();
@@ -608,7 +608,7 @@ int main(int argc, char *argv[]) {
 
   fuse_opt_add_arg(&args, "-o daemon_timeout=1000");
   // debug
-  // fuse_opt_add_arg(&args, "-d");
+  fuse_opt_add_arg(&args, "-d");
 
   return fuse_main(args.argc, args.argv, &operations, nullptr);
 }

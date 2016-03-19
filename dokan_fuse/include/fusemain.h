@@ -123,7 +123,7 @@ public:
                                           // walk_directory_getdir()
   };
   static int walk_directory(void *buf, const char *name,
-                            const struct FUSE_STAT *stbuf, FUSE_OFF_T off);
+                            const struct stat *stbuf, FUSE_OFF_T off);
   static int walk_directory_getdir(fuse_dirh_t hndl, const char *name, int type,
                                    ino_t ino);
 

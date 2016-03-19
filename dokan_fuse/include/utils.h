@@ -23,7 +23,7 @@ FILETIME unixTimeToFiletime(time_t t);
 time_t filetimeToUnixTime(const FILETIME *ft);
 bool is_filetime_set(const FILETIME *ft);
 
-template<class T> void convertStatlikeBuf(const struct FUSE_STAT *stbuf, const std::string &name, 
+template<class T> void convertStatlikeBuf(const struct stat *stbuf, const std::string &name, 
 										  T * find_data)
 {
 	if (stbuf==NULL) return;

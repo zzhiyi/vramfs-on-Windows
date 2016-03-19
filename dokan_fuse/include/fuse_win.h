@@ -194,7 +194,7 @@ struct stat64_cygwin {
 #define st_ctime st_ctim.tv_sec
 #define st_mtime st_mtim.tv_sec
 */
-#define FUSE_STAT stat
+//#define FUSE_STAT stat
 #if 0
 struct stat64 {
 	dev_t st_dev;
